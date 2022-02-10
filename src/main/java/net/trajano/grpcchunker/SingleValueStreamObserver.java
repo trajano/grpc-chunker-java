@@ -38,8 +38,8 @@ public class SingleValueStreamObserver<T> implements StreamObserver<T> {
         latch.await();
     }
 
-    public void await(long timeout, TimeUnit unit) throws InterruptedException {
-        latch.await(timeout, unit);
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+        return latch.await(timeout, unit);
     }
 
     public Optional<T> getValue() {
