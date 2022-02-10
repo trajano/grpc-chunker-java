@@ -11,7 +11,7 @@ import net.trajano.grpcchunker.GrpcStreamsOuterClass.SavedFormMeta;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-public class GrpcStreamsServer extends GrpcStreamsImplBase {
+public class GrpcStreamsService extends GrpcStreamsImplBase {
     @Override
     public StreamObserver<SavedFormChunk> bidirectionalStreaming(StreamObserver<ResponseFormChunk> responseObserver) {
         return GrpcChunker.dechunkingStreamObserver(

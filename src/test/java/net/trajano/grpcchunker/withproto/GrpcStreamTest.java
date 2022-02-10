@@ -1,14 +1,15 @@
 package net.trajano.grpcchunker.withproto;
 
-import io.grpc.Channel;
-import io.grpc.ManagedChannelBuilder;
+import io.grpc.ManagedChannel;
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
+import io.grpc.inprocess.InProcessChannelBuilder;
+import io.grpc.inprocess.InProcessServerBuilder;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -17,16 +18,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GrpcStreamTest {
 
     private static Server server;
-    private static Channel channel;
+    private static ManagedChannel channel;
 
     @BeforeAll
     @SneakyThrows
     static void setupServer() {
-        server = ServerBuilder.forPort(0)
-                .addService(new GrpcStreamsServer())
+        final var name = InProcessServerBuilder.generateName();
+        server = InProcessServerBuilder.forName(name)
+                .directExecutor()
+                .addService(new GrpcStreamsService())
                 .build()
                 .start();
-        channel = ManagedChannelBuilder.forAddress("localhost", server.getPort())
+
+        channel = InProcessChannelBuilder.forName(name)
                 .usePlaintext()
                 .build();
 
@@ -35,6 +39,8 @@ class GrpcStreamTest {
     @AfterAll
     @SneakyThrows
     static void teardownServer() {
+        channel.shutdown()
+                .awaitTermination(1, TimeUnit.MINUTES);
         server
                 .shutdown()
                 .awaitTermination();
