@@ -23,4 +23,17 @@ class ResponseSampleEntity {
         return withData(data + dataChunk.getData().toStringUtf8());
     }
 
+    public static ResponseSampleEntity buildFromMetaChunk(GrpcStreamsOuterClass.ResponseFormChunk chunk) {
+        return new ResponseSampleEntity()
+                .withMetaChunk(chunk);
+    }
+
+    public static ResponseSampleEntity combineWithAddedDataChunk(ResponseSampleEntity current, GrpcStreamsOuterClass.ResponseFormChunk chunk) {
+        return new ResponseSampleEntity()
+                .withMeta(current.getMeta())
+                .withData(current.getData())
+                .withDataChunkAdded(chunk);
+    }
+
+
 }
