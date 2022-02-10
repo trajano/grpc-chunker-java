@@ -2,7 +2,11 @@ package net.trajano.grpcchunker;
 
 import io.grpc.stub.StreamObserver;
 
-import java.util.function.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Dechunks a GRPC stream from the request and calls the consumer when a complete object is created.  This stops
@@ -10,9 +14,8 @@ import java.util.function.*;
  *
  * @param <T> entity type
  * @param <R> GRPC chunk message type
- * @param <S> GRPC message type for response streams
  */
-class DechunkingStreamObserver<T, R, S> implements StreamObserver<R> {
+class LatchedDechunkingStreamObserver<T, R> implements StreamObserver<R> {
 
     /**
      * This function takes the current entity state and the chunk and returns a copy of the combined result.  Note the combiner may modify the existing data, but may cause unexpected behaviour.
@@ -35,9 +38,9 @@ class DechunkingStreamObserver<T, R, S> implements StreamObserver<R> {
     private final Function<R, T> objectSupplier;
 
     /**
-     * GRPC response observer.
+     * Countdown latch.
      */
-    private final StreamObserver<S> responseObserver;
+    private final CountDownLatch latch;
 
     /**
      * Currently being processed entity.
@@ -50,24 +53,24 @@ class DechunkingStreamObserver<T, R, S> implements StreamObserver<R> {
     private boolean inError;
 
     /**
-     * @param metaPredicate    predicate that returns true if it is a meta chunk indicating a start of a new object.
-     * @param objectSupplier   this function gets the meta chunk and supplies a new object
-     * @param combiner         this function takes the current entity state and the chunk and returns a copy of the combined result.  Note the combiner may modify the existing data, but may cause unexpected behaviour.
-     * @param consumer         a function that takes in the assembled object.
-     * @param responseObserver GRPC response observer
+     * @param metaPredicate  predicate that returns true if it is a meta chunk indicating a start of a new object.
+     * @param objectSupplier this function gets the meta chunk and supplies a new object
+     * @param combiner       this function takes the current entity state and the chunk and returns a copy of the combined result.  Note the combiner may modify the existing data, but may cause unexpected behaviour.
+     * @param consumer       a function that takes in the assembled object.
+     * @param latch          count down latch
      */
-    DechunkingStreamObserver(
+    LatchedDechunkingStreamObserver(
             final Predicate<R> metaPredicate,
             final Function<R, T> objectSupplier,
             final BiFunction<T, R, T> combiner,
             final Consumer<T> consumer,
-            final StreamObserver<S> responseObserver) {
+            final CountDownLatch latch) {
 
         this.metaPredicate = metaPredicate;
         this.objectSupplier = objectSupplier;
         this.combiner = combiner;
         this.consumer = consumer;
-        this.responseObserver = responseObserver;
+        this.latch = latch;
         current = null;
         inError = false;
     }
@@ -82,7 +85,7 @@ class DechunkingStreamObserver<T, R, S> implements StreamObserver<R> {
             if (current != null) {
                 consumer.accept(current);
             }
-            responseObserver.onCompleted();
+            latch.countDown();
         } catch (final Exception e) {
             onError(e);
         }
@@ -92,7 +95,7 @@ class DechunkingStreamObserver<T, R, S> implements StreamObserver<R> {
     @Override
     public void onError(final Throwable throwable) {
 
-        responseObserver.onError(throwable);
+        latch.countDown();
         inError = true;
 
     }

@@ -1,0 +1,23 @@
+syntax = "proto3";
+package net.trajano.grpcchunker;
+
+message SavedFormMeta {
+  string id = 1;
+}
+
+message SavedFormChunk {
+  oneof type {
+    SavedFormMeta meta = 1;
+    bytes data = 2;
+  }
+}
+
+message ResponseFormChunk {
+  oneof type {
+    SavedFormMeta meta = 1;
+    bytes data = 2;
+  }
+}
+service GrpcStreams {
+  rpc saveFormDataStream(stream SavedFormChunk) returns (stream ResponseFormChunk) {}
+}
