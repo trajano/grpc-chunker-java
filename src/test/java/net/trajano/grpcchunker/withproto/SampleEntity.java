@@ -29,7 +29,7 @@ class SampleEntity {
 
     public GrpcStreamsOuterClass.SavedFormChunk toMetaChunk() {
         return GrpcStreamsOuterClass.SavedFormChunk.newBuilder().setMeta(
-                GrpcStreamsOuterClass.SavedFormMeta.newBuilder().setId(meta).build()
+                GrpcStreamsOuterClass.SavedFormMeta.newBuilder().setId(meta)
         ).build();
     }
 

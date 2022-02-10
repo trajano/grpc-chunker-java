@@ -4,7 +4,6 @@ import io.grpc.stub.StreamObserver;
 
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -13,6 +12,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public final class GrpcChunker {
+    private GrpcChunker() {
+    }
 
     /**
      * Assembles one stream object from the chunks.
@@ -35,13 +36,20 @@ public final class GrpcChunker {
             final BiFunction<T, R, T> combiner
     ) {
 
-        var o = objectSupplier.apply(metaChunkRef.getAndSet(null));
+        var metaChunk = metaChunkRef.get();
+        if (metaChunk == null) {
+            return null;
+        }
+        var o = objectSupplier.apply(metaChunk);
 
         while (chunkIterator.hasNext()) {
             final var chunk = chunkIterator.next();
+
             if (metaPredicate.test(chunk)) {
                 metaChunkRef.set(chunk);
                 break;
+            } else {
+                metaChunkRef.set(null);
             }
             o = combiner.apply(o, chunk);
         }
@@ -108,22 +116,16 @@ public final class GrpcChunker {
             final BiFunction<T, R, T> combiner) {
 
         if (!chunkIterator.hasNext()) {
-            // empty case
+            // short circuit empty case
             return Stream.empty();
         }
         final var lastChunkRef = new AtomicReference<>(chunkIterator.next());
 
         final var seed = assembleOne(lastChunkRef, chunkIterator, metaPredicate, objectSupplier, combiner);
-        final var hasNextRef = new AtomicBoolean(true);
         return Stream.iterate(
                 seed,
-                o -> hasNextRef.get(),
-                o -> {
-                    if (lastChunkRef.get() == null) {
-                        hasNextRef.set(false);
-                    }
-                    return assembleOne(lastChunkRef, chunkIterator, metaPredicate, objectSupplier, combiner);
-                });
+                o -> o != null || lastChunkRef.get() != null,
+                o -> assembleOne(lastChunkRef, chunkIterator, metaPredicate, objectSupplier, combiner));
 
     }
 
@@ -187,6 +189,7 @@ public final class GrpcChunker {
      * @param <T>   type of value expected
      * @return stream observer
      */
+    @SuppressWarnings("unused")
     public static <T> SingleValueStreamObserver<T> singleValueStreamObserver(Class<T> clazz) {
         return new SingleValueStreamObserver<>();
     }

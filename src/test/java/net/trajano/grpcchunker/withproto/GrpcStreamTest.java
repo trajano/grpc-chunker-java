@@ -43,7 +43,7 @@ class GrpcStreamTest {
                 .awaitTermination(1, TimeUnit.MINUTES);
         server
                 .shutdown()
-                .awaitTermination();
+                .awaitTermination(1, TimeUnit.MINUTES);
     }
 
 
@@ -80,6 +80,19 @@ class GrpcStreamTest {
 
     @Test
     @SneakyThrows
+    void downloadBlocking() {
+        final var grpcStreamsClient = new GrpcStreamsClient(channel);
+        var responseTape = grpcStreamsClient.downloadBlocking(new SampleEntity().withMeta("0").withData("FooBar")).collect(Collectors.toList());
+        assertThat(responseTape)
+                .containsExactly(
+                        new ResponseSampleEntity().withMeta("0").withData("FooBar"),
+                        new ResponseSampleEntity().withMeta("0").withData("FooBar"),
+                        new ResponseSampleEntity().withMeta("0").withData("FooBar")
+                );
+    }
+
+    @Test
+    @SneakyThrows
     void upload() {
         final var grpcStreamsClient = new GrpcStreamsClient(channel);
         var tape = Stream.of(
@@ -105,6 +118,8 @@ class GrpcStreamTest {
         );
         var response = grpcStreamsClient.upload(tape, 600);
         assertThat(response)
+                .isPresent()
+                .get()
                 .isEqualTo(new ResponseSampleEntity()
                         .withMeta("2")
                         .withData("FooBarFoodBardFoodBard"));

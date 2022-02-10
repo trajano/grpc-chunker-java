@@ -3,6 +3,7 @@ package net.trajano.grpcchunker.withproto;
 import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import net.trajano.grpcchunker.GrpcChunker;
+import net.trajano.grpcchunker.GrpcStreamsOuterClass.ResponseFormChunk;
 import net.trajano.grpcchunker.GrpcStreamsOuterClass.SavedFormChunk;
 import net.trajano.grpcchunker.GrpcStreamsOuterClass.SavedFormMeta;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,26 @@ import static org.mockito.Mockito.mock;
 class GrpcMessageTest {
 
     @Test
+    void dechunk() {
+        final var fooBar = new ResponseSampleEntity().withMeta("0").withData("FooBar");
+        final var metaChunk = fooBar.toMetaChunk();
+        final var dataChunk = ResponseFormChunk.newBuilder().setData(ByteString.copyFromUtf8(fooBar.getData())).build();
+        final var tape = List.of(metaChunk, dataChunk, metaChunk, dataChunk, metaChunk, dataChunk);
+        final var dechunkedStream = GrpcChunker.dechunk(
+                tape.iterator(),
+                ResponseFormChunk::hasMeta,
+                ResponseSampleEntity::buildFromMetaChunk,
+                ResponseSampleEntity::combineWithAddedDataChunk);
+        assertThat(dechunkedStream)
+                .containsExactly(
+                        new ResponseSampleEntity().withMeta("0").withData("FooBar"),
+                        new ResponseSampleEntity().withMeta("0").withData("FooBar"),
+                        new ResponseSampleEntity().withMeta("0").withData("FooBar")
+                );
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void dechunkingStreamObserver() {
 
         final StreamObserver<SampleEntity> responseObserver = mock(StreamObserver.class);
