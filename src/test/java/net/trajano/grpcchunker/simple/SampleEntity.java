@@ -10,7 +10,7 @@ import lombok.With;
 @NoArgsConstructor
 @AllArgsConstructor
 class SampleEntity {
-    private String data = "";
+  private String data = "";
 
-    private String meta;
+  private String meta;
 }

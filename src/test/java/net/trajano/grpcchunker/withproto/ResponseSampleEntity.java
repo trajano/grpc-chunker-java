@@ -13,41 +13,36 @@ import net.trajano.grpcchunker.GrpcStreamsOuterClass.SavedFormMeta;
 @NoArgsConstructor
 @AllArgsConstructor
 class ResponseSampleEntity {
-    private String data = "";
+  private String data = "";
 
-    private String meta;
+  private String meta;
 
-    public static ResponseSampleEntity buildFromMetaAndData(GrpcStreamsOuterClass.ResponseMetaAndData o) {
-        return new ResponseSampleEntity()
-                .withMeta(o.getId())
-                .withData(o.getData().toStringUtf8());
-    }
+  public static ResponseSampleEntity buildFromMetaAndData(
+      GrpcStreamsOuterClass.ResponseMetaAndData o) {
+    return new ResponseSampleEntity().withMeta(o.getId()).withData(o.getData().toStringUtf8());
+  }
 
-    public ResponseFormChunk toMetaChunk() {
-        return ResponseFormChunk.newBuilder().setMeta(
-                SavedFormMeta.newBuilder().setId(meta)
-        ).build();
-    }
+  public ResponseFormChunk toMetaChunk() {
+    return ResponseFormChunk.newBuilder().setMeta(SavedFormMeta.newBuilder().setId(meta)).build();
+  }
 
-    public ResponseSampleEntity withMetaChunk(ResponseFormChunk metaChunk) {
-        return withMeta(metaChunk.getMeta().getId());
-    }
+  public ResponseSampleEntity withMetaChunk(ResponseFormChunk metaChunk) {
+    return withMeta(metaChunk.getMeta().getId());
+  }
 
-    public ResponseSampleEntity withDataChunkAdded(ResponseFormChunk dataChunk) {
-        return withData(data + dataChunk.getData().toStringUtf8());
-    }
+  public ResponseSampleEntity withDataChunkAdded(ResponseFormChunk dataChunk) {
+    return withData(data + dataChunk.getData().toStringUtf8());
+  }
 
-    public static ResponseSampleEntity buildFromMetaChunk(ResponseFormChunk chunk) {
-        return new ResponseSampleEntity()
-                .withMetaChunk(chunk);
-    }
+  public static ResponseSampleEntity buildFromMetaChunk(ResponseFormChunk chunk) {
+    return new ResponseSampleEntity().withMetaChunk(chunk);
+  }
 
-    public static ResponseSampleEntity combineWithAddedDataChunk(ResponseSampleEntity current, ResponseFormChunk chunk) {
-        return new ResponseSampleEntity()
-                .withMeta(current.getMeta())
-                .withData(current.getData())
-                .withDataChunkAdded(chunk);
-    }
-
-
+  public static ResponseSampleEntity combineWithAddedDataChunk(
+      ResponseSampleEntity current, ResponseFormChunk chunk) {
+    return new ResponseSampleEntity()
+        .withMeta(current.getMeta())
+        .withData(current.getData())
+        .withDataChunkAdded(chunk);
+  }
 }
