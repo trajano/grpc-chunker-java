@@ -181,6 +181,17 @@ public final class GrpcChunker {
     }
 
     /**
+     * Creates a stream observer that waits for a single and only a single value.
+     *
+     * @param clazz class of the value expected
+     * @param <T>   type of value expected
+     * @return stream observer
+     */
+    public static <T> SingleValueStreamObserver<T> singleValueStreamObserver(Class<T> clazz) {
+        return new SingleValueStreamObserver<>();
+    }
+
+    /**
      * Dechunks a GRPC stream from the request and calls the consumer when a complete object is created.  This stops
      * further processing once an error has occurred.  This takes in a countdown latch that is countdown when the
      * processing completes or errors out.

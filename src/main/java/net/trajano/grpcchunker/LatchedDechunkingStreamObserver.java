@@ -94,8 +94,8 @@ class LatchedDechunkingStreamObserver<T, R> implements StreamObserver<R> {
 
     /**
      * This releases the latch and rethrows the exception as a runtime exception if it is not a runtime exception.
-     *
-     * @param throwable
+     * <p>
+     * {@inheritDoc}
      */
     @Override
     public void onError(final Throwable throwable) {

@@ -94,4 +94,20 @@ class GrpcStreamTest {
                         .withData("FooBarFoodBardFoodBard"));
     }
 
+    @Test
+    @SneakyThrows
+    void uploadWithTimeout() {
+        final var grpcStreamsClient = new GrpcStreamsClient(channel);
+        var tape = Stream.of(
+                new SampleEntity().withMeta("0").withData("FooBar"),
+                new SampleEntity().withMeta("1").withData("FoodBard"),
+                new SampleEntity().withMeta("2").withData("FoodBard")
+        );
+        var response = grpcStreamsClient.upload(tape, 600);
+        assertThat(response)
+                .isEqualTo(new ResponseSampleEntity()
+                        .withMeta("2")
+                        .withData("FooBarFoodBardFoodBard"));
+    }
+
 }
