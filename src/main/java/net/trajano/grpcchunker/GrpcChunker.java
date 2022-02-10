@@ -149,7 +149,35 @@ public final class GrpcChunker {
             final StreamObserver<S> responseObserver
     ) {
 
-        return new DechunkingStreamObserver<>(metaPredicate, objectSupplier, combiner, consumer, responseObserver);
+        return new DechunkingStreamObserver<>(metaPredicate, objectSupplier, combiner, consumer, null, responseObserver);
+    }
+
+    /**
+     * Dechunks a GRPC stream from the request and calls the consumer when a complete object is created.  This stops
+     * further processing once an error has occurred.  This takes in a finalizer {@link Consumer} which may call
+     * {@link StreamObserver#onNext(Object)} to provide a single value to the stream before completion.
+     *
+     * @param metaPredicate    predicate that returns true if it is a meta chunk indicating a start of a new object.
+     * @param objectSupplier   this function gets the meta chunk and supplies a new object
+     * @param combiner         this function takes the current entity state and the chunk and returns a copy of the combined result.  Note the combiner may modify the existing data, but may cause unexpected behaviour.
+     * @param consumer         a function that takes in the assembled object.
+     * @param finalizer        a consumer that takes in the current object but is only called on the final one.  May  be null.
+     * @param responseObserver GRPC response observer
+     * @param <T>              entity type
+     * @param <R>              GRPC chunk message type
+     * @param <S>              GRPC message type for response streams
+     * @return stream observer
+     */
+    public static <T, R, S> StreamObserver<R> dechunkingStreamObserver(
+            final Predicate<R> metaPredicate,
+            final Function<R, T> objectSupplier,
+            final BiFunction<T, R, T> combiner,
+            final Consumer<T> consumer,
+            final Consumer<T> finalizer,
+            final StreamObserver<S> responseObserver
+    ) {
+
+        return new DechunkingStreamObserver<>(metaPredicate, objectSupplier, combiner, consumer, finalizer, responseObserver);
     }
 
     /**

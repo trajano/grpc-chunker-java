@@ -49,7 +49,7 @@ class GrpcStreamTest {
 
     @Test
     @SneakyThrows
-    void clientServer() {
+    void sendEntities() {
         final var grpcStreamsClient = new GrpcStreamsClient(channel);
         var tape = Stream.of(
                 new SampleEntity().withMeta("0").withData("FooBar"),
@@ -64,4 +64,34 @@ class GrpcStreamTest {
                         new ResponseSampleEntity().withMeta("2").withData("FoodBard")
                 );
     }
+
+    @Test
+    @SneakyThrows
+    void download() {
+        final var grpcStreamsClient = new GrpcStreamsClient(channel);
+        var responseTape = grpcStreamsClient.download(new SampleEntity().withMeta("0").withData("FooBar")).collect(Collectors.toList());
+        assertThat(responseTape)
+                .containsExactly(
+                        new ResponseSampleEntity().withMeta("0").withData("FooBar"),
+                        new ResponseSampleEntity().withMeta("0").withData("FooBar"),
+                        new ResponseSampleEntity().withMeta("0").withData("FooBar")
+                );
+    }
+
+    @Test
+    @SneakyThrows
+    void upload() {
+        final var grpcStreamsClient = new GrpcStreamsClient(channel);
+        var tape = Stream.of(
+                new SampleEntity().withMeta("0").withData("FooBar"),
+                new SampleEntity().withMeta("1").withData("FoodBard"),
+                new SampleEntity().withMeta("2").withData("FoodBard")
+        );
+        var response = grpcStreamsClient.upload(tape);
+        assertThat(response)
+                .isEqualTo(new ResponseSampleEntity()
+                        .withMeta("2")
+                        .withData("FooBarFoodBardFoodBard"));
+    }
+
 }

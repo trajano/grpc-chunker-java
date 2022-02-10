@@ -15,6 +15,12 @@ class ResponseSampleEntity {
 
     private String meta;
 
+    public static ResponseSampleEntity buildFromMetaAndData(GrpcStreamsOuterClass.ResponseMetaAndData o) {
+        return new ResponseSampleEntity()
+                .withMeta(o.getId())
+                .withData(o.getData().toStringUtf8());
+    }
+
     public ResponseSampleEntity withMetaChunk(GrpcStreamsOuterClass.ResponseFormChunk metaChunk) {
         return withMeta(metaChunk.getMeta().getId());
     }

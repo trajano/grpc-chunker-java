@@ -2,8 +2,11 @@ package net.trajano.grpcchunker.withproto;
 
 import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
+import lombok.SneakyThrows;
 import net.trajano.grpcchunker.GrpcChunker;
 import net.trajano.grpcchunker.GrpcStreamsGrpc.GrpcStreamsImplBase;
+import net.trajano.grpcchunker.GrpcStreamsOuterClass;
+import net.trajano.grpcchunker.GrpcStreamsOuterClass.MetaAndData;
 import net.trajano.grpcchunker.GrpcStreamsOuterClass.ResponseFormChunk;
 import net.trajano.grpcchunker.GrpcStreamsOuterClass.SavedFormChunk;
 import net.trajano.grpcchunker.GrpcStreamsOuterClass.SavedFormMeta;
@@ -40,5 +43,40 @@ public class GrpcStreamsService extends GrpcStreamsImplBase {
                 ),
                 responseObserver
         );
+    }
+
+    @Override
+    @SneakyThrows
+    public StreamObserver<SavedFormChunk> streamingUpload(StreamObserver<GrpcStreamsOuterClass.ResponseMetaAndData> responseObserver) {
+
+        var responseBuilder = GrpcStreamsOuterClass.ResponseMetaAndData.newBuilder();
+        return GrpcChunker.dechunkingStreamObserver(
+                SavedFormChunk::hasMeta,
+                (SavedFormChunk chunk) -> new SampleEntity()
+                        .withMetaChunk(chunk),
+                (current, chunk) -> new SampleEntity()
+                        .withMeta(current.getMeta())
+                        .withData(current.getData())
+                        .withDataChunkAdded(chunk),
+                (SampleEntity o) -> {
+                    responseBuilder
+                            .setId(o.getMeta())
+                            .setData(ByteString.copyFromUtf8(responseBuilder.getData().toStringUtf8() + o.getData()));
+                },
+                (SampleEntity o) -> responseObserver.onNext(responseBuilder.build()),
+                responseObserver
+        );
+
+    }
+
+    @Override
+    public void streamingDownload(MetaAndData request, StreamObserver<ResponseFormChunk> responseObserver) {
+        GrpcChunker.chunk(Stream.of(request, request, request),
+                r -> ResponseFormChunk.newBuilder().setMeta(SavedFormMeta.newBuilder().setId(r.getId()).build()).build(),
+                r -> Stream.of(ResponseFormChunk.newBuilder().setData(r.getData()).build()),
+                responseObserver
+        );
+        responseObserver.onCompleted();
+
     }
 }
