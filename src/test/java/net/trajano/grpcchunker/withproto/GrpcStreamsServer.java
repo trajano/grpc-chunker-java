@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 public class GrpcStreamsServer extends GrpcStreamsImplBase {
     @Override
-    public StreamObserver<SavedFormChunk> saveFormDataStream(StreamObserver<ResponseFormChunk> responseObserver) {
+    public StreamObserver<SavedFormChunk> bidirectionalStreaming(StreamObserver<ResponseFormChunk> responseObserver) {
         return GrpcChunker.dechunkingStreamObserver(
                 SavedFormChunk::hasMeta,
                 (SavedFormChunk chunk) -> new SampleEntity()
@@ -22,24 +22,22 @@ public class GrpcStreamsServer extends GrpcStreamsImplBase {
                         .withMeta(current.getMeta())
                         .withData(current.getData())
                         .withDataChunkAdded(chunk),
-                (SampleEntity o) -> {
-                    GrpcChunker.chunk(
-                            // process one a time
-                            Stream.of(o),
-                            // ID is the meta value.
-                            obj -> ResponseFormChunk.newBuilder().setMeta(SavedFormMeta.newBuilder().setId(o.getMeta()).build()).build(),
-                            (SampleEntity obj) -> {
-                                // Split data two characters at a time
-                                return Arrays.stream(obj
-                                                .getData()
-                                                .split("(?<=\\G.{2})"))
-                                        .map(
-                                                s -> ResponseFormChunk.newBuilder().setData(ByteString.copyFromUtf8(s)).build()
-                                        );
-                            },
-                            responseObserver
-                    );
-                },
+                (SampleEntity o) -> GrpcChunker.chunk(
+                        // process one a time
+                        Stream.of(o),
+                        // ID is the meta value.
+                        obj -> ResponseFormChunk.newBuilder().setMeta(SavedFormMeta.newBuilder().setId(o.getMeta()).build()).build(),
+                        (SampleEntity obj) -> {
+                            // Split data two characters at a time
+                            return Arrays.stream(obj
+                                            .getData()
+                                            .split("(?<=\\G.{2})"))
+                                    .map(
+                                            s -> ResponseFormChunk.newBuilder().setData(ByteString.copyFromUtf8(s)).build()
+                                    );
+                        },
+                        responseObserver
+                ),
                 responseObserver
         );
     }

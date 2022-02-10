@@ -29,7 +29,7 @@ public class GrpcStreamsClient {
                 latch
         );
 
-        final var requestObserver = stub.saveFormDataStream(responseObserver);
+        final var requestObserver = stub.bidirectionalStreaming(responseObserver);
         GrpcChunker.chunk(
                 entityStream,
                 SampleEntity::toMetaChunk,

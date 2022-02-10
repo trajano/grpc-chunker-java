@@ -12,6 +12,16 @@ message SavedFormChunk {
   }
 }
 
+message MetaAndData {
+  string id = 1;
+  bytes data = 2;
+}
+
+message ResponseMetaAndData {
+  string id = 1;
+  bytes data = 2;
+}
+
 message ResponseFormChunk {
   oneof type {
     SavedFormMeta meta = 1;
@@ -19,5 +29,7 @@ message ResponseFormChunk {
   }
 }
 service GrpcStreams {
-  rpc saveFormDataStream(stream SavedFormChunk) returns (stream ResponseFormChunk) {}
+  rpc bidirectionalStreaming(stream SavedFormChunk) returns (stream ResponseFormChunk) {}
+  rpc streamingUpload(stream SavedFormChunk) returns (ResponseMetaAndData) {}
+  rpc streamingDownload(MetaAndData) returns (stream ResponseFormChunk) {}
 }
