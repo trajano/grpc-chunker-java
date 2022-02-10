@@ -92,11 +92,21 @@ class LatchedDechunkingStreamObserver<T, R> implements StreamObserver<R> {
 
     }
 
+    /**
+     * This releases the latch and rethrows the exception as a runtime exception if it is not a runtime exception.
+     *
+     * @param throwable
+     */
     @Override
     public void onError(final Throwable throwable) {
 
         latch.countDown();
         inError = true;
+        if (throwable instanceof RuntimeException) {
+            throw (RuntimeException) throwable;
+        } else {
+            throw new IllegalStateException(throwable);
+        }
 
     }
 
