@@ -3,7 +3,9 @@ package net.trajano.grpcchunker.withproto;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
+import io.grpc.ServerBuilder;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.util.concurrent.TimeUnit;
@@ -18,19 +20,34 @@ class GrpcStreamTest {
 
   private static Server server;
   private static ManagedChannel channel;
+  private static final boolean useInProcess = true;
 
   @BeforeAll
   @SneakyThrows
   static void setupServer() {
-    final var name = InProcessServerBuilder.generateName();
-    server =
-        InProcessServerBuilder.forName(name)
-            .directExecutor()
-            .addService(new GrpcStreamsService())
-            .build()
-            .start();
 
-    channel = InProcessChannelBuilder.forName(name).usePlaintext().build();
+    if (useInProcess) {
+
+      final var name = InProcessServerBuilder.generateName();
+      server =
+          InProcessServerBuilder.forName(name)
+              .directExecutor()
+              .addService(new GrpcStreamsService())
+              .build()
+              .start();
+
+      channel = InProcessChannelBuilder.forName(name).usePlaintext().build();
+
+    } else {
+
+      server = ServerBuilder.forPort(0).addService(new GrpcStreamsService()).build().start();
+      channel =
+          ManagedChannelBuilder.forAddress("localhost", server.getPort())
+              .usePlaintext()
+              .enableRetry()
+              .maxRetryAttempts(5)
+              .build();
+    }
   }
 
   @AfterAll

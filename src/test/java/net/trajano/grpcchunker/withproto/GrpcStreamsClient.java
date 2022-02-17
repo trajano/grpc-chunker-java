@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import net.trajano.grpcchunker.DataChunker;
 import net.trajano.grpcchunker.GrpcChunker;
 import net.trajano.grpcchunker.GrpcStreamsGrpc;
 import net.trajano.grpcchunker.GrpcStreamsOuterClass;
@@ -77,7 +78,12 @@ public class GrpcStreamsClient {
 
     final var requestObserver = stub.bidirectionalStreaming(responseObserver);
     GrpcChunker.chunk(
-        entityStream, SampleEntity::toMetaChunk, SampleEntity::toDataChunkStream, requestObserver);
+        entityStream,
+        SampleEntity::toMetaChunk,
+        sampleEntity ->
+            DataChunker.chunkData(sampleEntity.getData(), 3)
+                .map(d -> GrpcStreamsOuterClass.SavedFormChunk.newBuilder().setData(d).build()),
+        requestObserver);
     requestObserver.onCompleted();
 
     latch.await();
