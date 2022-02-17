@@ -12,6 +12,7 @@ dependencies {
     implementation(platform('org.junit:junit-bom:5.8.+'))
 
     implementation 'io.grpc:grpc-stub'
+    implementation 'io.grpc:grpc-protobuf'
 
     testCompileOnly 'org.projectlombok:lombok:1.18.+'
     testCompileOnly "org.apache.tomcat:annotations-api:6.0.53"
@@ -44,4 +45,11 @@ sourceSets {
 }
 test {
     useJUnitPlatform()
+}
+
+spotless {
+    java {
+        target "src/**/*.java"
+        googleJavaFormat()
+    }
 }

@@ -1,5 +1,6 @@
 package net.trajano.grpcchunker;
 
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BiFunction;
@@ -99,7 +100,7 @@ class LatchedDechunkingStreamObserver<T, R> implements StreamObserver<R> {
     if (throwable instanceof RuntimeException) {
       throw (RuntimeException) throwable;
     } else {
-      throw new IllegalStateException(throwable);
+      throw Status.fromThrowable(throwable).asRuntimeException();
     }
   }
 

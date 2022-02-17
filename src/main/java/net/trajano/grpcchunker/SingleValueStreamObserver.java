@@ -1,5 +1,6 @@
 package net.trajano.grpcchunker;
 
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -13,7 +14,9 @@ public class SingleValueStreamObserver<T> implements StreamObserver<T> {
   @Override
   public void onNext(T value) {
     if (ref.get() != null) {
-      throw new IllegalStateException("Only expecting one call for onNext");
+      throw Status.FAILED_PRECONDITION
+          .withDescription("Only expecting one call for onNext")
+          .asRuntimeException();
     }
     ref.set(value);
   }
@@ -24,7 +27,7 @@ public class SingleValueStreamObserver<T> implements StreamObserver<T> {
     if (throwable instanceof RuntimeException) {
       throw (RuntimeException) throwable;
     } else {
-      throw new IllegalStateException(throwable);
+      throw Status.fromThrowable(throwable).asRuntimeException();
     }
   }
 

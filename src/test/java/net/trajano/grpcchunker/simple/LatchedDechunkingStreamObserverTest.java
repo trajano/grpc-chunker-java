@@ -3,6 +3,7 @@ package net.trajano.grpcchunker.simple;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.grpc.StatusRuntimeException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -93,7 +94,8 @@ class LatchedDechunkingStreamObserverTest {
             captured::add,
             latch);
     final var ex = new Exception("FOO");
-    assertThatThrownBy(() -> requestObserver.onError(ex)).isInstanceOf(IllegalStateException.class);
+    assertThatThrownBy(() -> requestObserver.onError(ex))
+        .isInstanceOf(StatusRuntimeException.class);
     assertThat(captured).isEmpty();
   }
 

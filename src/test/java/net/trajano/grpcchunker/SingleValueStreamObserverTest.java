@@ -2,6 +2,7 @@ package net.trajano.grpcchunker;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.Test;
 
 class SingleValueStreamObserverTest {
@@ -11,7 +12,7 @@ class SingleValueStreamObserverTest {
     final var stringSingleValueStreamObserver = GrpcChunker.singleValueStreamObserver(String.class);
     stringSingleValueStreamObserver.onNext("Hello");
     assertThatThrownBy(() -> stringSingleValueStreamObserver.onNext("World"))
-        .isInstanceOf(IllegalStateException.class);
+        .isInstanceOf(StatusRuntimeException.class);
   }
 
   @Test
@@ -29,6 +30,6 @@ class SingleValueStreamObserverTest {
     stringSingleValueStreamObserver.onNext("Hello");
     final var ex = new Exception();
     assertThatThrownBy(() -> stringSingleValueStreamObserver.onError(ex))
-        .isInstanceOf(IllegalStateException.class);
+        .isInstanceOf(StatusRuntimeException.class);
   }
 }
