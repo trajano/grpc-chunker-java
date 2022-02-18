@@ -121,7 +121,12 @@ class DataChunkerTest {
   @Test
   void chunkDataReaderWithError() throws IOException {
     final var is = spy(new StringReader("HALLO WORLD"));
-    doReturn(3, 3, 3).doThrow(new IOException("FOO")).when(is).read(any(char[].class));
+    doCallRealMethod()
+        .doCallRealMethod()
+        .doCallRealMethod()
+        .doThrow(new IOException("FOO"))
+        .when(is)
+        .read(any(char[].class));
     final var byteStringStream = DataChunker.chunkData(is, 3);
     final var iterator = byteStringStream.iterator();
     assertThat(iterator.next()).hasSize(3);
