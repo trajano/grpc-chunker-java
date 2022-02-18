@@ -114,7 +114,8 @@ class DechunkingStreamObserverTest {
             responseObserver::onNext,
             responseObserver);
 
-    assertThatThrownBy(() -> requestObserver.onError(new ReflectiveOperationException("FOO")))
+    final var ex = new ReflectiveOperationException("FOO");
+    assertThatThrownBy(() -> requestObserver.onError(ex))
         .isInstanceOf(StatusRuntimeException.class)
         .hasMessage("UNKNOWN: FOO");
   }
@@ -134,8 +135,8 @@ class DechunkingStreamObserverTest {
             responseObserver::onNext,
             responseObserver);
 
-    assertThatThrownBy(() -> requestObserver.onError(new IllegalArgumentException("FOO")))
-        .hasMessage("FOO");
+    final var ex = new IllegalArgumentException("FOO");
+    assertThatThrownBy(() -> requestObserver.onError(ex)).hasMessage("FOO");
   }
 
   @Test
