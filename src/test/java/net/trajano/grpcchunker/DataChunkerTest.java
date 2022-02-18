@@ -162,16 +162,6 @@ class DataChunkerTest {
     assertThat(buf).isEqualTo(new byte[] {3, 4, 5});
     assertThat(is.read(buf)).isEqualTo(3);
     assertThat(buf).isEqualTo(new byte[] {6, 7, 8});
-    assertThatThrownBy(
-            () -> {
-              try {
-                is.read(buf);
-              } catch (IOException e) {
-                throw new UncheckedIOException(e);
-              }
-            })
-        .isInstanceOf(UncheckedIOException.class)
-        .hasCauseInstanceOf(IOException.class)
-        .hasRootCauseMessage("FOO");
+    assertThatThrownBy(() -> is.read(buf)).isInstanceOf(IOException.class).hasMessage("FOO");
   }
 }
