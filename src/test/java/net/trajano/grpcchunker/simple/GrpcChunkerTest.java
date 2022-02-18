@@ -9,14 +9,17 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.trajano.grpcchunker.GrpcChunker;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class GrpcChunkerTest {
 
   @Test
-  void chunk() {
+  void chunk(@Mock StreamObserver<String> observer) {
 
-    final var observer = (StreamObserver<String>) mock(StreamObserver.class);
     final var tape =
         List.of(
             new SampleEntity().withMeta("_ 0").withData("foobar"),
@@ -45,9 +48,7 @@ class GrpcChunkerTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void chunk0() {
-
-    final var observer = (StreamObserver<String>) mock(StreamObserver.class);
+  void chunk0(@Mock StreamObserver<String> observer) {
 
     final var captor = ArgumentCaptor.forClass(String.class);
 
@@ -73,9 +74,8 @@ class GrpcChunkerTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void chunkHigherLevel() {
+  void chunkHigherLevel(@Mock StreamObserver<String> observer) {
 
-    final var observer = (StreamObserver<String>) mock(StreamObserver.class);
     final var tape =
         List.of(
             new SampleEntity().withMeta("_ 0").withData("foobar"),
@@ -103,9 +103,8 @@ class GrpcChunkerTest {
   }
 
   @Test
-  void chunkHigherLevel2() {
+  void chunkHigherLevel2(@Mock StreamObserver<String> observer) {
 
-    final var observer = (StreamObserver<String>) mock(StreamObserver.class);
     final var tape =
         List.of(
             new SampleEntity().withMeta("_ 0").withData("foobar"),

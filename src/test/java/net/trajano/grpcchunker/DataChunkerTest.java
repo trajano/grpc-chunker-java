@@ -86,12 +86,17 @@ class DataChunkerTest {
   @Test
   void chunkDataExactByteStreamWithError() throws IOException {
     final var is = spy(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
-    doReturn(3, 3, 3).doThrow(new IOException("FOO")).when(is).read(any());
+    doCallRealMethod()
+        .doCallRealMethod()
+        .doCallRealMethod()
+        .doThrow(new IOException("FOO"))
+        .when(is)
+        .read(any(byte[].class));
     final var byteStringStream = DataChunker.chunkData(is, 3);
     final var iterator = byteStringStream.iterator();
-    assertThat(iterator.next()).hasSize(3);
-    assertThat(iterator.next()).hasSize(3);
-    assertThat(iterator.next()).hasSize(3);
+    assertThat(iterator.next()).hasSize(3).isEqualTo(ByteString.copyFrom(new byte[] {0, 1, 2}));
+    assertThat(iterator.next()).hasSize(3).isEqualTo(ByteString.copyFrom(new byte[] {3, 4, 5}));
+    assertThat(iterator.next()).hasSize(3).isEqualTo(ByteString.copyFrom(new byte[] {6, 7, 8}));
 
     assertThatThrownBy(iterator::next).isInstanceOf(UncheckedIOException.class);
   }
@@ -134,5 +139,34 @@ class DataChunkerTest {
             ByteString.copyFromUtf8("lo "),
             ByteString.copyFromUtf8("wor"),
             ByteString.copyFromUtf8("ld"));
+  }
+
+  @Test
+  void validateSpyByteInputStream() throws IOException {
+    var is = spy(new ByteArrayInputStream(new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+    doCallRealMethod()
+        .doCallRealMethod()
+        .doCallRealMethod()
+        .doThrow(new IOException("FOO"))
+        .when(is)
+        .read(any(byte[].class));
+    byte[] buf = new byte[3];
+    assertThat(is.read(buf)).isEqualTo(3);
+    assertThat(buf).isEqualTo(new byte[] {0, 1, 2});
+    assertThat(is.read(buf)).isEqualTo(3);
+    assertThat(buf).isEqualTo(new byte[] {3, 4, 5});
+    assertThat(is.read(buf)).isEqualTo(3);
+    assertThat(buf).isEqualTo(new byte[] {6, 7, 8});
+    assertThatThrownBy(
+            () -> {
+              try {
+                is.read(buf);
+              } catch (IOException e) {
+                throw new UncheckedIOException(e);
+              }
+            })
+        .isInstanceOf(UncheckedIOException.class)
+        .hasCauseInstanceOf(IOException.class)
+        .hasRootCauseMessage("FOO");
   }
 }
