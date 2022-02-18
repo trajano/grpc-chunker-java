@@ -16,7 +16,7 @@ import net.trajano.grpcchunker.GrpcStreamsOuterClass.SavedFormMeta;
 public class GrpcStreamsService extends GrpcStreamsImplBase {
   @Override
   public StreamObserver<SavedFormChunk> bidirectionalStreaming(
-      StreamObserver<ResponseFormChunk> responseObserver) {
+      final StreamObserver<ResponseFormChunk> responseObserver) {
     return GrpcChunker.dechunkingStreamObserver(
         SavedFormChunk::hasMeta,
         (SavedFormChunk chunk) -> new SampleEntity().withMetaChunk(chunk),

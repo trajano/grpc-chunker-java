@@ -100,7 +100,9 @@ class LatchedDechunkingStreamObserver<T, R> implements StreamObserver<R> {
     if (throwable instanceof RuntimeException) {
       throw (RuntimeException) throwable;
     } else {
-      throw Status.fromThrowable(throwable).asRuntimeException();
+      throw Status.fromThrowable(throwable)
+          .augmentDescription(throwable.getMessage())
+          .asRuntimeException();
     }
   }
 

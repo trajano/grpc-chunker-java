@@ -10,7 +10,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 /**
- * Provides a chunkData function that would take string or byte array data and chunks them into streams of ByteString.
+ * Provides a chunkData function that would take string or byte array data and chunks them into
+ * streams of ByteString.
  */
 public final class DataChunker {
   private DataChunker() {}

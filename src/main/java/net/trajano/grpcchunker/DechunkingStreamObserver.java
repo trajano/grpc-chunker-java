@@ -1,5 +1,6 @@
 package net.trajano.grpcchunker;
 
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -98,11 +99,25 @@ class DechunkingStreamObserver<T, R, S> implements StreamObserver<R> {
     }
   }
 
+  /**
+   * Transmits the error to the response observer and rethrows it if it is an unchecked exception,
+   * otherwise it will wrap it
+   *
+   * @param throwable throwable
+   */
   @Override
   public void onError(final Throwable throwable) {
 
     responseObserver.onError(throwable);
     inError = true;
+
+    if (throwable instanceof RuntimeException) {
+      throw (RuntimeException) throwable;
+    } else {
+      throw Status.fromThrowable(throwable)
+          .augmentDescription(throwable.getMessage())
+          .asRuntimeException();
+    }
   }
 
   @Override

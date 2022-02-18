@@ -27,7 +27,9 @@ public class SingleValueStreamObserver<T> implements StreamObserver<T> {
     if (throwable instanceof RuntimeException) {
       throw (RuntimeException) throwable;
     } else {
-      throw Status.fromThrowable(throwable).asRuntimeException();
+      throw Status.fromThrowable(throwable)
+          .augmentDescription(throwable.getMessage())
+          .asRuntimeException();
     }
   }
 

@@ -20,7 +20,7 @@ class GrpcStreamTest {
 
   private static Server server;
   private static ManagedChannel channel;
-  private static final boolean useInProcess = true;
+  private static final boolean useInProcess = false;
 
   @BeforeAll
   @SneakyThrows

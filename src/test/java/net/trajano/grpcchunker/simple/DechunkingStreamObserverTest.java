@@ -1,15 +1,16 @@
 package net.trajano.grpcchunker.simple;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.List;
 import net.trajano.grpcchunker.GrpcChunker;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 class DechunkingStreamObserverTest {
 
@@ -51,6 +52,35 @@ class DechunkingStreamObserverTest {
   }
 
   @Test
+  void dechunkingStreamObserverWithErrorOnConsumer() {
+
+    final StreamObserver<SampleEntity> responseObserver = mock(StreamObserver.class);
+
+    // metas start with _
+    final var tape = List.of("_ 0", "foo", "bar", "_ 1", "food", "bard", "_ 2", "food", "bard");
+    final var captured = new ArrayList<>();
+    final var requestObserver =
+        GrpcChunker.dechunkingStreamObserver(
+            chunk -> chunk.startsWith("_"),
+            (String chunk) -> new SampleEntity().withMeta(chunk),
+            (current, chunk) ->
+                new SampleEntity().withMeta(current.getMeta()).withData(current.getData() + chunk),
+            (o) -> {
+              throw new IllegalArgumentException("FOO");
+            },
+            responseObserver);
+    final var tapeIterator = tape.iterator();
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    final var nextMeta = tapeIterator.next();
+
+    assertThatThrownBy(() -> requestObserver.onNext(nextMeta))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("FOO");
+  }
+
+  @Test
   void dechunkingStreamObserverEmpty() {
 
     final var responseObserver = (StreamObserver<SampleEntity>) mock(StreamObserver.class);
@@ -72,6 +102,7 @@ class DechunkingStreamObserverTest {
   @Test
   void dechunkingStreamObserverWithError() {
 
+    @SuppressWarnings("unchecked")
     final var responseObserver = (StreamObserver<SampleEntity>) mock(StreamObserver.class);
 
     final var requestObserver =
@@ -82,13 +113,29 @@ class DechunkingStreamObserverTest {
                 new SampleEntity().withMeta(current.getMeta()).withData(current.getData() + chunk),
             responseObserver::onNext,
             responseObserver);
-    requestObserver.onError(new IllegalStateException("FOO"));
-    verify(responseObserver, never()).onNext(any());
-    verify(responseObserver, never()).onCompleted();
 
-    var captor = ArgumentCaptor.forClass(IllegalStateException.class);
-    verify(responseObserver).onError(captor.capture());
-    assertThat(captor.getValue().getMessage()).isEqualTo("FOO");
+    assertThatThrownBy(() -> requestObserver.onError(new ReflectiveOperationException("FOO")))
+        .isInstanceOf(StatusRuntimeException.class)
+        .hasMessage("UNKNOWN: FOO");
+  }
+
+  @Test
+  void dechunkingStreamObserverWithRuntimeException() {
+
+    @SuppressWarnings("unchecked")
+    final var responseObserver = (StreamObserver<SampleEntity>) mock(StreamObserver.class);
+
+    final var requestObserver =
+        GrpcChunker.dechunkingStreamObserver(
+            chunk -> chunk.startsWith("_"),
+            (String chunk) -> new SampleEntity().withMeta(chunk),
+            (current, chunk) ->
+                new SampleEntity().withMeta(current.getMeta()).withData(current.getData() + chunk),
+            responseObserver::onNext,
+            responseObserver);
+
+    assertThatThrownBy(() -> requestObserver.onError(new IllegalArgumentException("FOO")))
+        .hasMessage("FOO");
   }
 
   @Test
@@ -116,14 +163,19 @@ class DechunkingStreamObserverTest {
               responseObserver.onNext(o);
             },
             responseObserver);
-    tape.forEach(requestObserver::onNext);
-    requestObserver.onCompleted();
-    var inOrder = inOrder(responseObserver);
-    inOrder.verify(responseObserver).onNext(new SampleEntity().withMeta("_ 0").withData("foobar"));
-    inOrder
-        .verify(responseObserver)
-        .onNext(new SampleEntity().withMeta("_ 1").withData("foodbard"));
-    inOrder.verify(responseObserver).onError(any(IllegalStateException.class));
+    final var tapeIterator = tape.iterator();
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    final var nextMeta = tapeIterator.next();
+
+    assertThatThrownBy(() -> requestObserver.onNext(nextMeta))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("BLAH");
     verify(responseObserver, never()).onCompleted();
     assertThat(captured)
         .containsExactly(
@@ -153,14 +205,11 @@ class DechunkingStreamObserverTest {
               responseObserver.onNext(o);
             },
             responseObserver);
+
     tape.forEach(requestObserver::onNext);
-    requestObserver.onCompleted();
-    var inOrder = inOrder(responseObserver);
-    inOrder.verify(responseObserver).onNext(new SampleEntity().withMeta("_ 0").withData("foobar"));
-    inOrder
-        .verify(responseObserver)
-        .onNext(new SampleEntity().withMeta("_ 1").withData("foodbard"));
-    inOrder.verify(responseObserver).onError(any(IllegalStateException.class));
+    assertThatThrownBy(requestObserver::onCompleted)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("BLAH");
     verify(responseObserver, never()).onCompleted();
     assertThat(captured)
         .containsExactly(
@@ -193,6 +242,17 @@ class DechunkingStreamObserverTest {
               responseObserver.onNext(o);
             },
             responseObserver);
+    final var tapeIterator = tape.iterator();
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    requestObserver.onNext(tapeIterator.next());
+    final var nextMeta = tapeIterator.next();
+    assertThat(nextMeta).isEqualTo("food");
+
+    assertThatThrownBy(() -> requestObserver.onNext(nextMeta))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("BLAH");
     tape.forEach(requestObserver::onNext);
     var inOrder = inOrder(responseObserver);
     inOrder.verify(responseObserver).onNext(new SampleEntity().withMeta("_ 0").withData("foobar"));
