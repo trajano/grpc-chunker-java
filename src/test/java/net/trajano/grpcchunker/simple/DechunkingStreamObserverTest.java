@@ -11,13 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 import net.trajano.grpcchunker.GrpcChunker;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class DechunkingStreamObserverTest {
 
   @Test
-  void dechunkingStreamObserver() {
-
-    final StreamObserver<SampleEntity> responseObserver = mock(StreamObserver.class);
+  void dechunkingStreamObserver(@Mock StreamObserver<SampleEntity> responseObserver) {
 
     // metas start with _
     final var tape = List.of("_ 0", "foo", "bar", "_ 1", "food", "bard", "_ 2", "food", "bard");
@@ -52,13 +54,11 @@ class DechunkingStreamObserverTest {
   }
 
   @Test
-  void dechunkingStreamObserverWithErrorOnConsumer() {
-
-    final StreamObserver<SampleEntity> responseObserver = mock(StreamObserver.class);
+  void dechunkingStreamObserverWithErrorOnConsumer(
+      @Mock StreamObserver<SampleEntity> responseObserver) {
 
     // metas start with _
     final var tape = List.of("_ 0", "foo", "bar", "_ 1", "food", "bard", "_ 2", "food", "bard");
-    final var captured = new ArrayList<>();
     final var requestObserver =
         GrpcChunker.dechunkingStreamObserver(
             chunk -> chunk.startsWith("_"),
@@ -81,9 +81,7 @@ class DechunkingStreamObserverTest {
   }
 
   @Test
-  void dechunkingStreamObserverEmpty() {
-
-    final var responseObserver = (StreamObserver<SampleEntity>) mock(StreamObserver.class);
+  void dechunkingStreamObserverEmpty(@Mock StreamObserver<SampleEntity> responseObserver) {
 
     final var requestObserver =
         GrpcChunker.dechunkingStreamObserver(
@@ -100,10 +98,7 @@ class DechunkingStreamObserverTest {
   }
 
   @Test
-  void dechunkingStreamObserverWithError() {
-
-    @SuppressWarnings("unchecked")
-    final var responseObserver = (StreamObserver<SampleEntity>) mock(StreamObserver.class);
+  void dechunkingStreamObserverWithError(@Mock StreamObserver<SampleEntity> responseObserver) {
 
     final var requestObserver =
         GrpcChunker.dechunkingStreamObserver(
@@ -121,10 +116,8 @@ class DechunkingStreamObserverTest {
   }
 
   @Test
-  void dechunkingStreamObserverWithRuntimeException() {
-
-    @SuppressWarnings("unchecked")
-    final var responseObserver = (StreamObserver<SampleEntity>) mock(StreamObserver.class);
+  void dechunkingStreamObserverWithRuntimeException(
+      @Mock StreamObserver<SampleEntity> responseObserver) {
 
     final var requestObserver =
         GrpcChunker.dechunkingStreamObserver(
@@ -140,9 +133,8 @@ class DechunkingStreamObserverTest {
   }
 
   @Test
-  void dechunkingStreamObserverWithErrorAssembling() {
-
-    final StreamObserver<SampleEntity> responseObserver = mock(StreamObserver.class);
+  void dechunkingStreamObserverWithErrorAssembling(
+      @Mock StreamObserver<SampleEntity> responseObserver) {
 
     // metas start with _
     final var tape = List.of("_ 0", "foo", "bar", "_ 1", "food", "bard", "_ 2", "food");
@@ -185,9 +177,8 @@ class DechunkingStreamObserverTest {
   }
 
   @Test
-  void dechunkingStreamObserverWithErrorAssemblingAtEnd() {
-
-    final StreamObserver<SampleEntity> responseObserver = mock(StreamObserver.class);
+  void dechunkingStreamObserverWithErrorAssemblingAtEnd(
+      @Mock StreamObserver<SampleEntity> responseObserver) {
 
     // metas start with _
     final var tape = List.of("_ 0", "foo", "bar", "_ 1", "food", "bard", "_ 2", "error here");
@@ -219,9 +210,8 @@ class DechunkingStreamObserverTest {
   }
 
   @Test
-  void dechunkingStreamObserverWithErrorAssemblingMidStream() {
-
-    final StreamObserver<SampleEntity> responseObserver = mock(StreamObserver.class);
+  void dechunkingStreamObserverWithErrorAssemblingMidStream(
+      @Mock StreamObserver<SampleEntity> responseObserver) {
 
     // metas start with _
     final var tape = List.of("_ 0", "foo", "bar", "_ 1", "food", "bard", "_ 2", "food");
